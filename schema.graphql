@@ -1,0 +1,6 @@
+type ExampleEntity @entity {
+  id: ID!
+  count: BigInt!
+  tokenId: BigInt! # uint256
+  startingPrice: BigInt! # uint256
+}

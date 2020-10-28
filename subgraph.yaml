@@ -1,0 +1,35 @@
+specVersion: 0.0.1
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: CryptoKittiesSales
+    network: mainnet
+    source:
+      address: "0xb1690c08e213a35ed9bab7b318de14420fb57d8c"
+      abi: CryptoKittiesSales
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.2
+      language: wasm/assemblyscript
+      entities:
+        - AuctionCreated
+        - AuctionSuccessful
+        - AuctionCancelled
+        - Pause
+        - Unpause
+      abis:
+        - name: CryptoKittiesSales
+          file: ./abis/CryptoKittiesSales.json
+      eventHandlers:
+        - event: AuctionCreated(uint256,uint256,uint256,uint256)
+          handler: handleAuctionCreated
+        - event: AuctionSuccessful(uint256,uint256,address)
+          handler: handleAuctionSuccessful
+        - event: AuctionCancelled(uint256)
+          handler: handleAuctionCancelled
+        - event: Pause()
+          handler: handlePause
+        - event: Unpause()
+          handler: handleUnpause
+      file: ./src/mapping.ts
