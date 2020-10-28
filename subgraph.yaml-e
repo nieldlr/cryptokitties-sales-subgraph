@@ -1,6 +1,4 @@
 specVersion: 0.0.2
-description: CryptoKitties Sales
-repository: https://github.com/nieldlr/cryptokitties-sales
 schema:
   file: ./schema.graphql
 dataSources:
@@ -10,7 +8,6 @@ dataSources:
     source:
       address: "0xb1690c08e213a35ed9bab7b318de14420fb57d8c"
       abi: CryptoKittiesSales
-      startBlock: 11100000
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4

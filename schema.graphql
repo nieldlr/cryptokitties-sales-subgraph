@@ -1,6 +1,19 @@
-type ExampleEntity @entity {
+type CryptoKitty @entity {
   id: ID!
-  count: BigInt!
-  tokenId: BigInt! # uint256
-  startingPrice: BigInt! # uint256
+  totalAuctions: BigInt
+  auctions: [Auction!] @derivedFrom(field: "cryptoKitty")
+}
+
+type Auction @entity {
+  id: ID!
+  cryptoKitty: CryptoKitty!
+  startingPrice: BigInt # uint256
+  endingPrice: BigInt # uint256
+  startedAt: BigInt
+  endedAt: BigInt
+  initialDuration: BigInt # uint256
+  state: String
+  seller: String
+  winner: String
+  soldPrice: BigInt
 }

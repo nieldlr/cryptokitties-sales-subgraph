@@ -7,64 +7,94 @@ import {
   Pause,
   Unpause
 } from "../generated/CryptoKittiesSales/CryptoKittiesSales"
-import { ExampleEntity } from "../generated/schema"
+import { Auction, CryptoKitty } from "../generated/schema"
 
 export function handleAuctionCreated(event: AuctionCreated): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
-
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (entity == null) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  let kitty = CryptoKitty.load(event.params.tokenId.toString())
+  if (kitty == null) {
+    kitty = new CryptoKitty(event.params.tokenId.toString())
+    kitty.totalAuctions = BigInt.fromI32(1)
+  }
+  else {
+    kitty.totalAuctions = kitty.totalAuctions.plus(BigInt.fromI32(1));
   }
 
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
+  let auctionId = event.params.tokenId.toString().concat("-").concat(kitty.totalAuctions.toString())
+  let auction = Auction.load(auctionId);
+  if (auction == null) {
+    auction = new Auction(auctionId)
+  }
 
-  // Entity fields can be set based on event parameters
-  entity.tokenId = event.params.tokenId
-  entity.startingPrice = event.params.startingPrice
+  // Assign event params to entity
+  auction.cryptoKitty = event.params.tokenId.toString()
+  auction.seller = event.transaction.from.toHex()
+  auction.startingPrice = event.params.startingPrice
+  auction.endingPrice = event.params.endingPrice
+  auction.initialDuration = event.params.duration
 
-  // Entities can be written to the store with `.save()`
-  entity.save()
-
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.unpause(...)
-  // - contract.lastGen0SalePrices(...)
-  // - contract.paused(...)
-  // - contract.getAuction(...)
-  // - contract.ownerCut(...)
-  // - contract.pause(...)
-  // - contract.isSaleClockAuction(...)
-  // - contract.gen0SaleCount(...)
-  // - contract.owner(...)
-  // - contract.getCurrentPrice(...)
-  // - contract.nonFungibleContract(...)
-  // - contract.averageGen0SalePrice(...)
+  // Read contract to get startedAt field
+  let contract = CryptoKittiesSales.bind(event.address)
+  let auctionData = contract.getAuction(event.params.tokenId)
+  auction.startedAt = auctionData.value4
+  
+  auction.state = "live"
+  
+  auction.save()
+  kitty.save()
 }
 
-export function handleAuctionSuccessful(event: AuctionSuccessful): void {}
+export function handleAuctionSuccessful(event: AuctionSuccessful): void {
+  // Fetch cryptokitty entity to get ID for auction id
+  let kitty = CryptoKitty.load(event.params.tokenId.toString())
+  if (kitty == null) {
+    kitty = new CryptoKitty(event.params.tokenId.toString())
+    kitty.totalAuctions = BigInt.fromI32(1)
+  }
 
-export function handleAuctionCancelled(event: AuctionCancelled): void {}
+  let auctionId = event.params.tokenId.toString().concat("-").concat(kitty.totalAuctions.toString())
+  
+  let auction = Auction.load(auctionId);
+  if (auction == null) {
+    auction = new Auction(auctionId)
+    auction.cryptoKitty = event.params.tokenId.toString()
+  }
+
+  // Update auction
+  auction.soldPrice = event.params.totalPrice
+  auction.winner = event.params.winner.toHex()
+
+  auction.endedAt = event.block.timestamp
+
+  auction.state = "sold"
+  
+  auction.save()
+  kitty.save()
+}
+
+export function handleAuctionCancelled(event: AuctionCancelled): void {
+  // Fetch cryptokitty entity to get ID for auction id
+  let kitty = CryptoKitty.load(event.params.tokenId.toString())
+  if (kitty == null) {
+    kitty = new CryptoKitty(event.params.tokenId.toString())
+    kitty.totalAuctions = BigInt.fromI32(1)
+  }
+
+  let auctionId = event.params.tokenId.toString().concat("-").concat(kitty.totalAuctions.toString())
+  
+  let auction = Auction.load(auctionId);
+  if (auction == null) {
+    auction = new Auction(auctionId)
+    auction.cryptoKitty = event.params.tokenId.toString()
+  }
+
+  // Update auction
+  auction.endedAt = event.block.timestamp
+
+  auction.state = "cancelled"
+  
+  auction.save()
+  kitty.save()
+}
 
 export function handlePause(event: Pause): void {}
 
