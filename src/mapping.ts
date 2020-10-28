@@ -7,7 +7,7 @@ import {
   Pause,
   Unpause
 } from "../generated/CryptoKittiesSales/CryptoKittiesSales"
-import { Auction, CryptoKitty } from "../generated/schema"
+import { Auction, CryptoKitty, Transaction } from "../generated/schema"
 
 export function handleAuctionCreated(event: AuctionCreated): void {
   let kitty = CryptoKitty.load(event.params.tokenId.toString())
@@ -38,7 +38,13 @@ export function handleAuctionCreated(event: AuctionCreated): void {
   auction.startedAt = auctionData.value4
   
   auction.state = "live"
-  
+
+  // Transaction information
+  let transaction = new Transaction(event.transaction.hash.toHex())
+  transaction.type = "create"
+  transaction.auction = auctionId
+
+  transaction.save()  
   auction.save()
   kitty.save()
 }
@@ -66,6 +72,11 @@ export function handleAuctionSuccessful(event: AuctionSuccessful): void {
   auction.endedAt = event.block.timestamp
 
   auction.state = "sold"
+
+  // Transaction information
+  let transaction = new Transaction(event.transaction.hash.toHex())
+  transaction.type = "sold"
+  transaction.auction = auctionId
   
   auction.save()
   kitty.save()
@@ -89,8 +100,11 @@ export function handleAuctionCancelled(event: AuctionCancelled): void {
 
   // Update auction
   auction.endedAt = event.block.timestamp
-
   auction.state = "cancelled"
+
+  let transaction = new Transaction(event.transaction.hash.toHex())
+  transaction.type = "cancelled"
+  transaction.auction = auctionId
   
   auction.save()
   kitty.save()

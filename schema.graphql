@@ -16,4 +16,11 @@ type Auction @entity {
   seller: String
   winner: String
   soldPrice: BigInt
+  transactions: [Transaction!] @derivedFrom(field: "auction")
+}
+
+type Transaction @entity {
+  id: ID!
+  type: String!
+  auction: Auction!
 }
