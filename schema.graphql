@@ -23,4 +23,5 @@ type Transaction @entity {
   id: ID!
   type: String!
   auction: Auction!
+  timestamp: BigInt!
 }

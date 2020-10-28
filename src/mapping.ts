@@ -43,6 +43,7 @@ export function handleAuctionCreated(event: AuctionCreated): void {
   let transaction = new Transaction(event.transaction.hash.toHex())
   transaction.type = "create"
   transaction.auction = auctionId
+  transaction.timestamp = event.block.timestamp
 
   transaction.save()  
   auction.save()
@@ -77,7 +78,9 @@ export function handleAuctionSuccessful(event: AuctionSuccessful): void {
   let transaction = new Transaction(event.transaction.hash.toHex())
   transaction.type = "sold"
   transaction.auction = auctionId
+  transaction.timestamp = event.block.timestamp
   
+  transaction.save()
   auction.save()
   kitty.save()
 }
@@ -105,7 +108,9 @@ export function handleAuctionCancelled(event: AuctionCancelled): void {
   let transaction = new Transaction(event.transaction.hash.toHex())
   transaction.type = "cancelled"
   transaction.auction = auctionId
+  transaction.timestamp = event.block.timestamp
   
+  transaction.save()
   auction.save()
   kitty.save()
 }
