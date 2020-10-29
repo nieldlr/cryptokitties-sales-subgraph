@@ -1,6 +1,6 @@
 specVersion: 0.0.2
 description: CryptoKitties Sales
-repository: https://github.com/nieldlr/cryptokitties-sales
+repository: https://github.com/nieldlr/cryptokitties-sales-subgraph
 schema:
   file: ./schema.graphql
 dataSources:
