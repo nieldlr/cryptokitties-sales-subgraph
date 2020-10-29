@@ -9,7 +9,14 @@ import {
 } from "../generated/CryptoKittiesSales/CryptoKittiesSales"
 import { Auction, CryptoKitty, Transaction } from "../generated/schema"
 
+// import { log } from '@graphprotocol/graph-ts'
+
 export function handleAuctionCreated(event: AuctionCreated): void {
+  // log.debug('Block number: {}, block hash: {}, transaction hash: {}', [
+  //   event.block.number.toString(), // "47596000"
+  //   event.block.hash.toHexString(), // "0x..."
+  //   event.transaction.hash.toHexString(), // "0x..."
+  // ])
   let kitty = CryptoKitty.load(event.params.tokenId.toString())
   if (kitty == null) {
     kitty = new CryptoKitty(event.params.tokenId.toString())
@@ -32,10 +39,7 @@ export function handleAuctionCreated(event: AuctionCreated): void {
   auction.endingPrice = event.params.endingPrice
   auction.initialDuration = event.params.duration
 
-  // Read contract to get startedAt field
-  let contract = CryptoKittiesSales.bind(event.address)
-  let auctionData = contract.getAuction(event.params.tokenId)
-  auction.startedAt = auctionData.value4
+  auction.startedAt = event.block.timestamp
   
   auction.state = "live"
 
