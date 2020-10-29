@@ -1,5 +1,5 @@
 specVersion: 0.0.2
-description: CryptoKitties Sales
+description: A subgraph to index & explore CryptoKitties auctions
 repository: https://github.com/nieldlr/cryptokitties-sales-subgraph
 schema:
   file: ./schema.graphql
