@@ -12,6 +12,7 @@ type Aggregation @entity {
 type CryptoKitty @entity {
   id: ID!
   totalAuctions: BigInt
+  totalSold: BigInt
   auctions: [Auction!] @derivedFrom(field: "cryptoKitty")
 }
 

@@ -9,58 +9,59 @@ import {
 } from "../generated/CryptoKittiesSales/CryptoKittiesSales"
 import { Aggregation, Auction, CryptoKitty, Transaction } from "../generated/schema"
 
-// import { log } from '@graphprotocol/graph-ts'
+import {
+  getAggregation
+} from './helpers'
 
 export function handleAuctionCreated(event: AuctionCreated): void {
-  // log.debug('Block number: {}, block hash: {}, transaction hash: {}', [
-  //   event.block.number.toString(), // "47596000"
-  //   event.block.hash.toHexString(), // "0x..."
-  //   event.transaction.hash.toHexString(), // "0x..."
-  // ])
+  // First up let's get the cryptokitty so we can keep track of the total auctions
+  let isNewKitty = false
   let kitty = CryptoKitty.load(event.params.tokenId.toString())
+
+  // Is this a new ketty?
   if (kitty == null) {
+    // Yep, let's create it with default value
+    isNewKitty = true
     kitty = new CryptoKitty(event.params.tokenId.toString())
-    kitty.totalAuctions = BigInt.fromI32(1)
-  }
-  else {
-    kitty.totalAuctions = kitty.totalAuctions.plus(BigInt.fromI32(1));
+    kitty.totalAuctions = BigInt.fromI32(0)
   }
 
+  // Increase total auctions count for this kitty
+  kitty.totalAuctions = kitty.totalAuctions.plus(BigInt.fromI32(1));
+
+  // Then let's create a new auction
   let auctionId = event.params.tokenId.toString().concat("-").concat(kitty.totalAuctions.toString())
-  let auction = Auction.load(auctionId);
-  if (auction == null) {
-    auction = new Auction(auctionId)
-  }
+  let auction = new Auction(auctionId)
 
-  // Assign event params to entity
+  // Assign params to auction entity
   auction.cryptoKitty = event.params.tokenId.toString()
   auction.seller = event.transaction.from.toHex()
   auction.startingPrice = event.params.startingPrice
   auction.endingPrice = event.params.endingPrice
   auction.initialDuration = event.params.duration
-
   auction.startedAt = event.block.timestamp
-  
   auction.state = "live"
 
   // Transaction information
+  // Let's save transaction info so we can refer/query it if need
   let transaction = new Transaction(event.transaction.hash.toHex())
   transaction.type = "create"
   transaction.auction = auctionId
   transaction.timestamp = event.block.timestamp
 
+  // Save
   transaction.save()  
   auction.save()
   kitty.save()
 
-  let aggregation = Aggregation.load("1")
-  if (aggregation == null) {
-    aggregation = new Aggregation("1")
-    aggregation.totalAuctions = BigInt.fromI32(1)
+  // Let's wrap this up and aggregate totals
+  let aggregation = getAggregation()
+
+  aggregation.totalAuctions = aggregation.totalAuctions.plus(BigInt.fromI32(1))
+  if(isNewKitty) {
+    aggregation.totalUniqueCryptoKittiesAuctioned = aggregation.totalUniqueCryptoKittiesAuctioned.plus(BigInt.fromI32(1))
   }
-  else {
-    aggregation.totalAuctions = aggregation.totalAuctions.plus(BigInt.fromI32(1))
-  }
+
   aggregation.save()
 }
 
@@ -72,9 +73,11 @@ export function handleAuctionSuccessful(event: AuctionSuccessful): void {
     kitty.totalAuctions = BigInt.fromI32(1)
   }
 
+  // Load Auction
   let auctionId = event.params.tokenId.toString().concat("-").concat(kitty.totalAuctions.toString())
-  
-  let auction = Auction.load(auctionId);
+  let auction = Auction.load(auctionId)
+
+  // If for some reason this auction is not present, let's init it
   if (auction == null) {
     auction = new Auction(auctionId)
     auction.cryptoKitty = event.params.tokenId.toString()
@@ -83,9 +86,7 @@ export function handleAuctionSuccessful(event: AuctionSuccessful): void {
   // Update auction
   auction.soldPrice = event.params.totalPrice
   auction.winner = event.params.winner.toHex()
-
   auction.endedAt = event.block.timestamp
-
   auction.state = "sold"
 
   // Transaction information
@@ -98,14 +99,15 @@ export function handleAuctionSuccessful(event: AuctionSuccessful): void {
   auction.save()
   kitty.save()
 
-  let aggregation = Aggregation.load("1")
-  if (aggregation == null) {
-    aggregation = new Aggregation("1")
-    aggregation.totalAuctionsSold = BigInt.fromI32(1)
-  }
-  else {
-    aggregation.totalAuctionsSold = aggregation.totalAuctionsSold.plus(BigInt.fromI32(1))
-  }
+  // Let's wrap this up and aggregate totals
+  let aggregation = getAggregation()
+  aggregation.totalAuctionsSold = aggregation.totalAuctionsSold.plus(BigInt.fromI32(1))
+  
+  // Is this the first time this kitty has been sold?
+  // if(kitty.totalAuctions == 1) {
+  //   aggregation.totalUniqueCryptoKittiesSold= aggregation.totalUniqueCryptoKittiesSold.plus(BigInt.fromI32(1))
+  // }
+
   aggregation.save()
 }
 
@@ -117,9 +119,11 @@ export function handleAuctionCancelled(event: AuctionCancelled): void {
     kitty.totalAuctions = BigInt.fromI32(1)
   }
 
+  // Load auction
   let auctionId = event.params.tokenId.toString().concat("-").concat(kitty.totalAuctions.toString())
-  
-  let auction = Auction.load(auctionId);
+  let auction = Auction.load(auctionId)
+
+  // If for some reason this auction is not present, let's init it
   if (auction == null) {
     auction = new Auction(auctionId)
     auction.cryptoKitty = event.params.tokenId.toString()
@@ -129,24 +133,22 @@ export function handleAuctionCancelled(event: AuctionCancelled): void {
   auction.endedAt = event.block.timestamp
   auction.state = "cancelled"
 
+  // Save transaction information for reference
   let transaction = new Transaction(event.transaction.hash.toHex())
   transaction.type = "cancelled"
   transaction.auction = auctionId
   transaction.timestamp = event.block.timestamp
   
+  // Save
   transaction.save()
   auction.save()
   kitty.save()
 
-  let aggregation = Aggregation.load("1")
-  if (aggregation == null) {
-    aggregation = new Aggregation("1")
-    aggregation.totalAuctionsCancelled = BigInt.fromI32(1)
-  }
-  else {
-    aggregation.totalAuctionsCancelled = aggregation.totalAuctionsCancelled.plus(BigInt.fromI32(1))
-  }
-  aggregation.save()
+  // Let's wrap this up and aggregate totals
+  let aggregation = getAggregation()
+  aggregation.totalAuctionsCancelled = aggregation.totalAuctionsCancelled.plus(BigInt.fromI32(1))
+  aggregation.save();
+  
 }
 
 export function handlePause(event: Pause): void {}
