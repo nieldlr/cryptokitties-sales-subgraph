@@ -7,7 +7,7 @@ import {
   Pause,
   Unpause
 } from "../generated/CryptoKittiesSales/CryptoKittiesSales"
-import { Auction, CryptoKitty, Transaction } from "../generated/schema"
+import { Aggregation, Auction, CryptoKitty, Transaction } from "../generated/schema"
 
 // import { log } from '@graphprotocol/graph-ts'
 
@@ -52,6 +52,16 @@ export function handleAuctionCreated(event: AuctionCreated): void {
   transaction.save()  
   auction.save()
   kitty.save()
+
+  let aggregation = Aggregation.load("1")
+  if (aggregation == null) {
+    aggregation = new Aggregation("1")
+    aggregation.totalAuctions = BigInt.fromI32(1)
+  }
+  else {
+    aggregation.totalAuctions = aggregation.totalAuctions.plus(BigInt.fromI32(1))
+  }
+  aggregation.save()
 }
 
 export function handleAuctionSuccessful(event: AuctionSuccessful): void {
@@ -87,6 +97,16 @@ export function handleAuctionSuccessful(event: AuctionSuccessful): void {
   transaction.save()
   auction.save()
   kitty.save()
+
+  let aggregation = Aggregation.load("1")
+  if (aggregation == null) {
+    aggregation = new Aggregation("1")
+    aggregation.totalAuctionsSold = BigInt.fromI32(1)
+  }
+  else {
+    aggregation.totalAuctionsSold = aggregation.totalAuctionsSold.plus(BigInt.fromI32(1))
+  }
+  aggregation.save()
 }
 
 export function handleAuctionCancelled(event: AuctionCancelled): void {
@@ -117,6 +137,16 @@ export function handleAuctionCancelled(event: AuctionCancelled): void {
   transaction.save()
   auction.save()
   kitty.save()
+
+  let aggregation = Aggregation.load("1")
+  if (aggregation == null) {
+    aggregation = new Aggregation("1")
+    aggregation.totalAuctionsCancelled = BigInt.fromI32(1)
+  }
+  else {
+    aggregation.totalAuctionsCancelled = aggregation.totalAuctionsCancelled.plus(BigInt.fromI32(1))
+  }
+  aggregation.save()
 }
 
 export function handlePause(event: Pause): void {}

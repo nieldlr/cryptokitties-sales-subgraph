@@ -1,3 +1,14 @@
+type Aggregation @entity {
+  id: ID!
+  totalAuctions: BigInt
+  totalAuctionsSold: BigInt
+  totalAuctionsCancelled: BigInt
+  totalUniqueCryptoKittiesAuctioned: BigInt
+  totalUniqueCryptoKittiesSold: BigInt
+  totalUniqueCryptoKittiesCancelled: BigInt
+  totalEtherSold: BigInt
+}
+
 type CryptoKitty @entity {
   id: ID!
   totalAuctions: BigInt
