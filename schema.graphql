@@ -1,39 +1,66 @@
 type Aggregation @entity {
   id: ID!
+  "Total auctions ever created"
   totalAuctions: BigInt
+  "Total auctions ever succesfully sold"
   totalAuctionsSold: BigInt
+  "Total auctions ever cancelled"
   totalAuctionsCancelled: BigInt
+  "Total unique cryptokitties ever auctioned"
   totalUniqueCryptoKittiesAuctioned: BigInt
+  "Total unique cryptokitties ever sold"
   totalUniqueCryptoKittiesSold: BigInt
-  totalUniqueCryptoKittiesCancelled: BigInt
-  totalEtherSold: BigInt
+  "Total ether revenue through succesful auctions"
+  totalEtherRevenue: BigInt
 }
 
 type CryptoKitty @entity {
+  "CryptoKitty tokenId"
   id: ID!
+  "Total auctions this cryptokitty has been a part of"
   totalAuctions: BigInt
-  totalSold: BigInt
+  "Total succesful auctions for this cryptokitty"
+  totalAuctionsSold: BigInt
+  "Total revenue collected for succesful auctions of this cryptokitty"
+  totalEtherRevenue: BigInt
+  "List of all auctions for this cryptokitty"
   auctions: [Auction!] @derivedFrom(field: "cryptoKitty")
 }
 
 type Auction @entity {
+  "ID is the {tokenId-auctionCount} is has gone through"
   id: ID!
+  "CryptoKitty who this auction belongs too"
   cryptoKitty: CryptoKitty!
+  "Auction starting price"
   startingPrice: BigInt # uint256
+  "Auction ending price"
   endingPrice: BigInt # uint256
+  "When auction started"
   startedAt: BigInt
+  "When auction ended by either being sold or cancelled"
   endedAt: BigInt
+  "Duration this auction was meant to run for"
   initialDuration: BigInt # uint256
+  "Is this auction, live, sold or cancelled"
   state: String
+  "Who auctioned this"
   seller: String
+  "Who won this if succesful auction"
   winner: String
+  "Final sold price if succesful auction"
   soldPrice: BigInt
+  "List of transactions related to this auction"
   transactions: [Transaction!] @derivedFrom(field: "auction")
 }
 
 type Transaction @entity {
+  "Transaction hash"
   id: ID!
+  "What type of transaction was this. Relates to auction"
   type: String!
+  "Which auction is this for"
   auction: Auction!
+  "When did this transaction occur"
   timestamp: BigInt!
 }
